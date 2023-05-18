@@ -22,6 +22,7 @@ def get_options():
     parser.add_argument("-i", "--input_folder", required = True, help = "Input file path", type = str)
     parser.add_argument("-j", "--json_input",   required = True, help = "Json input file path (ROI selection)", type = str)
     parser.add_argument("-q", "--quantile",     default = 0., help = "Normalize the output picture with its <x> quantile value", type = float)
+    parser.add_argument("--copy_print",         default = False, action = 'store_true', help = "Print format better suitable for markdown table")
     parser.add_argument("-o", "--json_output",  default = "", help = "Json output file path (Variance record)", type = str)
     return parser.parse_args()
 
@@ -36,7 +37,7 @@ def get_selection(path: str):
 def outlier_rejection_mean(patch: np.ndarray, iter = 2):
     """ Reject firefly induced mean shifting
     """
-    mean = patch.mean(axis = (0, 1))
+    mean = patch.mean()
     mask = np.ones(patch.shape[:-1], dtype = bool)
     mask &= patch.max(axis = -1) < 255                  # saturated pixel can not be used in calculation
     for _ in range(iter):
@@ -44,7 +45,7 @@ def outlier_rejection_mean(patch: np.ndarray, iter = 2):
         diff_norm = np.linalg.norm(diff, axis = -1)
         max_norm = diff_norm.max()
         mask &= diff_norm < (0.9 * max_norm)
-        mean = patch[mask, :].mean(axis = 0)
+        mean = patch[mask, :].mean()
     return mean
 
 def rescale_patches(patch: np.ndarray, patch_gt: np.ndarray):
@@ -52,11 +53,11 @@ def rescale_patches(patch: np.ndarray, patch_gt: np.ndarray):
     """
     patch_mean    = outlier_rejection_mean(patch, 1)
     patch_gt_mask = patch_gt.max(axis = -1) < 255 
-    patch_gt_mean = patch_gt[patch_gt_mask, :].mean(axis = (0, 1))
+    patch_gt_mean = patch_gt[patch_gt_mask, :].mean()
     patch = patch / patch_mean * patch_gt_mean
     return patch
 
-def variance_analysis(input_list: List[np.ndarray], gt: np.ndarray, roi: List[Tuple[Tuple[int, int], Tuple[int, int]]]):
+def variance_analysis(input_list: List[np.ndarray], gt: np.ndarray, roi: List[Tuple[Tuple[int, int], Tuple[int, int]]], copy_print = False):
     all_mse = []
     result_mse = []
     for i, ((sx, sy), (ex, ey)) in enumerate(roi):
@@ -68,9 +69,14 @@ def variance_analysis(input_list: List[np.ndarray], gt: np.ndarray, roi: List[Tu
             mse = (patch - gt_patch) ** 2
             mses.append(mse.mean())
         final_mse = np.mean(mses)
-        print(f"For ROI {i + 1}, variance = {final_mse:.6f}")
+        if copy_print:
+            print(f"{final_mse:.6f}", end = " | ")
+        else:
+            print(f"For ROI {i + 1}, variance = {final_mse:.6f}")
         all_mse.append(mses)
         result_mse.append(final_mse)
+    if copy_print:
+        print("")
     return all_mse, result_mse
 
 def get_input_images(input_path:str, quantile: float) -> List[np.ndarray]:
@@ -83,15 +89,40 @@ def get_input_images(input_path:str, quantile: float) -> List[np.ndarray]:
         images.append(image)
     return images
 
+def get_avg_time(path: str):
+    input_path = os.path.join(path, "time.log")
+    if os.path.exists(input_path):
+        with open(input_path, 'r', encoding = 'utf-8') as file:
+            lines = file.readlines()
+            sum_time = 0
+            sum_cnt  = 0
+            for line in lines:
+                if not line: continue
+                try:
+                    value = float(line[:-1])
+                except ValueError:
+                    pass
+                else:
+                    sum_time += value
+                    sum_cnt += 1
+            if sum_cnt == 0: return -1.
+            time = sum_time / sum_cnt
+            print(f"Avg time for this scene: {time:.5f}")
+            return time
+    else:
+        print(f"Time information not exist in '{input_path}'")
+    return -1
+
+
 if __name__ == "__main__":
     opts = get_options()
     roi_selection = get_selection(opts.json_input)
     gt_image      = read_exr(opts.gt, opts.quantile).astype(float)
     var_images    = get_input_images(opts.input_folder, opts.quantile) 
-    all_mse, result_mse = variance_analysis(var_images, gt_image, roi_selection)
-
+    time          = get_avg_time(opts.input_folder)
+    all_mse, result_mse = variance_analysis(var_images, gt_image, roi_selection, opts.copy_print)
     if opts.json_output:
         out_path = os.path.join(opts.input_folder, opts.json_output)
         with open(out_path, 'w', encoding = 'utf-8') as file:
-            json_file = {"name": Path(opts.input_folder).stem, "all_mse": all_mse, "mse": result_mse}
+            json_file = {"name": Path(opts.input_folder).stem, "time": time, "all_mse": all_mse, "mse": result_mse}
             json.dump(json_file, file, indent = 4)
