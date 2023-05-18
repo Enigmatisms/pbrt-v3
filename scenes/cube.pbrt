@@ -1,0 +1,184 @@
+# No image filter by default
+
+LookAt 2.78 2.73 -8.00  2.78 2.73 0   0 1 0
+Camera "perspective" "float fov" [39.3077]
+Accelerator "bvh"
+Sampler "random" "integer pixelsamples" [4]
+Film "image"
+   "string filename" ["guide_bunny.exr"]
+   "integer xresolution" [512]
+   "integer yresolution" [512]
+
+Integrator "bdpt" "integer maxdepth" [256] "integer tileSize" [8] 
+	"float diffusion_nu" [0] "integer useMIS" 1 
+	"integer rseed_time" 1 "integer log_time" 1
+
+WorldBegin
+
+# light source
+
+# Name "cbox_back.002"
+
+AttributeBegin
+   AreaLightSource "diffuse" "rgb L" [1.0 0.9 0.8]
+   Material "matte"
+   "rgb Kd" [0.33333334 0.33333334 0.33333334]
+
+   Shape "trianglemesh"
+   "point3 P" [ 
+      5.495999813 0 -8.364502907
+      5.559999943 5.487998962 -8.364502907
+      0 5.487998962 -8.364502907
+      0 0 -8.364502907
+   ]
+   "normal N" [ 
+      -0 -0 1
+      -0 -0 1
+      -0 -0 1
+      -0 -0 1
+   ]
+   "integer indices" [ 
+      0 1 2
+      0 2 3
+      ]
+AttributeEnd
+
+# world medium bound
+
+Material "matte"
+
+#
+# floor
+#
+
+AttributeBegin
+   Shape "trianglemesh"
+   "rgb Kd" [0.8666667 0.5 0.5]
+   "integer indices" [ 0 1 2  2 3 0 ]
+   "point P" [
+      5.528 -0.4  0.0
+      0.0 -0.4   0.0
+      0.0 -0.4 5.592
+    5.496 -0.4 5.592 ]
+AttributeEnd
+
+
+#
+# ceiling
+#
+
+AttributeBegin
+   Shape "trianglemesh"
+   "rgb Kd" [0.5 0.8666667 0.5]
+   "integer indices" [ 0 1 2  2 3 0 ]
+   "point P" [
+    5.560 5.488 0.0
+    5.560 5.488 5.592
+      0.0 5.488 5.592
+      0.0 5.488   0.0 ]
+AttributeEnd
+
+MakeNamedMedium "mymedium" "string type" "homogeneous" "rgb sigma_s" [80 80 80] "rgb sigma_a" [0.02 0.02 0.02] "float g" 0.0
+
+TransformBegin
+    Translate 3.2 3.1 4.5
+	AttributeBegin
+	# Material unspecified in OBJ file
+
+	Material "none"
+	MediumInterface "mymedium" ""
+
+		Shape "sphere" "float radius" 1.5
+	AttributeEnd
+TransformEnd   # Translate no longer applies here
+
+TransformBegin
+    Translate 1.2 1.1 2.5
+	AttributeBegin
+	# Material unspecified in OBJ file
+
+	Material "none"
+	MediumInterface "mymedium" ""
+
+		Shape "sphere" "float radius" 1.2
+	AttributeEnd
+TransformEnd   # Translate no longer applies here
+
+TransformBegin
+    Translate 3.0 0.5 0
+	AttributeBegin
+
+	Material "none"
+	MediumInterface "" "mymedium"
+
+	Shape "trianglemesh"
+	"integer indices" [
+		3 2 0 2 1 0
+		7 6 4 6 5 4
+		11 10 8 10 9 8
+		15 14 12 14 13 12
+		19 18 16 18 17 16
+	]
+	"point P" [
+		1.300 1.650 0.650
+		0.820 1.650 2.250
+		2.400 1.650 2.720
+		2.900 1.650 1.140
+		2.900   0.0 1.140
+		2.900 1.650 1.140
+		2.400 1.650 2.720
+		2.400   0.0 2.720
+		1.300   0.0 0.650
+		1.300 1.650 0.650
+		2.900 1.650 1.140
+		2.900   0.0 1.140
+		0.820   0.0 2.250
+		0.820 1.650 2.250
+		1.300 1.650 0.650
+		1.300   0.0 0.650
+		2.400   0.0 2.720
+		2.400 1.650 2.720
+		0.820 1.650 2.250
+		0.820   0.0 2.250 ]
+	AttributeEnd
+TransformEnd   # Translate no longer applies here
+
+TransformBegin
+    Translate -1.8 3.3 2.5
+	AttributeBegin
+
+	Material "none"
+	MediumInterface "" "mymedium"
+
+	Shape "trianglemesh"
+	"integer indices" [
+		3 2 0 2 1 0
+		7 6 4 6 5 4
+		11 10 8 10 9 8
+		15 14 12 14 13 12
+		19 18 16 18 17 16
+	]
+	"point P" [
+		1.300 1.650 0.650
+		0.820 1.650 2.250
+		2.400 1.650 2.720
+		2.900 1.650 1.140
+		2.900   0.0 1.140
+		2.900 1.650 1.140
+		2.400 1.650 2.720
+		2.400   0.0 2.720
+		1.300   0.0 0.650
+		1.300 1.650 0.650
+		2.900 1.650 1.140
+		2.900   0.0 1.140
+		0.820   0.0 2.250
+		0.820 1.650 2.250
+		1.300 1.650 0.650
+		1.300   0.0 0.650
+		2.400   0.0 2.720
+		2.400 1.650 2.720
+		0.820 1.650 2.250
+		0.820   0.0 2.250 ]
+	AttributeEnd
+TransformEnd   # Translate no longer applies here
+WorldEnd
