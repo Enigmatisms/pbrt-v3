@@ -129,7 +129,7 @@ class HenyeyGreenstein : public PhaseFunction {
 
     Float dvd_p(const Vector3f &w, GuidedSamplingInfo* dvd_info) const {
       // Be aware, the direction of w should be checked
-      	return DvdPdf(Dot(w / w.Length(), dvd_info->normal), dvd_info);
+      	return DvdPdf(Dot(w, dvd_info->normal), dvd_info);
     }
 
     std::string ToString() const {

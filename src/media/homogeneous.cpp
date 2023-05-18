@@ -53,7 +53,7 @@ Spectrum HomogeneousMedium::Sample(const Ray &ray, Sampler &sampler,
     Spectrum scatter_t = sigma_t;
     if (guide_info != nullptr) {
       // If there is guiding info, we can rescale sigma_t for distance sampling
-      Float w_z = Dot(ray.d / ray.d.Length(), guide_info->normal);
+      Float w_z = Dot(ray.d, guide_info->normal);
       scatter_t *= (1.f - w_z / guide_info->nu);
     }
 

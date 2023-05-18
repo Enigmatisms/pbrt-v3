@@ -166,7 +166,6 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
             // if current interaction is not medium interaction and we use dvd_sampling
             // The updated values will not be used immediately
             guide_info->normal = Vector3f(isect.n);             // this is geometric normal
-            guide_info->normal /= guide_info->normal.Length();
         }
         if (beta.IsBlack()) break;
         Vertex &vertex = path[bounces], &prev = path[bounces - 1];
@@ -188,6 +187,7 @@ int RandomWalk(const Scene &scene, RayDifferential ray, Sampler &sampler,
                 pdfRev = mi.phase->dvd_p(-ray.d, guide_info.get());
                 // These two pdfs are still of solid angle measure
                 // Here we should calculate contribution / pdf, since they do not cancel each other out now.
+                // Float fwd_mis = pdfFwd / (Inv4Pi + pdfFwd);
                 beta *= Inv4Pi / pdfFwd;
             }
             ray = mi.SpawnRay(wi);
