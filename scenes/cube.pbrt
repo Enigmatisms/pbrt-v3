@@ -3,15 +3,15 @@
 LookAt 2.78 2.73 -8.00  2.78 2.73 0   0 1 0
 Camera "perspective" "float fov" [39.3077]
 Accelerator "bvh"
-Sampler "random" "integer pixelsamples" [4]
+Sampler "random" "integer pixelsamples" [32]
 Film "image"
    "string filename" ["guide_bunny.exr"]
    "integer xresolution" [512]
    "integer yresolution" [512]
 
 Integrator "bdpt" "integer maxdepth" [256] "integer tileSize" [8] 
-	"float diffusion_nu" [0] "integer useMIS" 1 
-	"integer rseed_time" 1 "integer log_time" 1
+	"float diffusion_nu" [36.52305279] "integer useMIS" 1 
+	"integer rseed_time" 1 "integer logTime" 1
 
 WorldBegin
 
@@ -78,7 +78,7 @@ AttributeBegin
       0.0 5.488   0.0 ]
 AttributeEnd
 
-MakeNamedMedium "mymedium" "string type" "homogeneous" "rgb sigma_s" [80 80 80] "rgb sigma_a" [0.02 0.02 0.02] "float g" 0.0
+MakeNamedMedium "mymedium" "string type" "homogeneous" "rgb sigma_s" [100 100 100] "rgb sigma_a" [0.2 0.2 0.2] "float g" 0.0
 
 TransformBegin
     Translate 3.2 3.1 4.5

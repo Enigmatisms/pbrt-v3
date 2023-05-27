@@ -68,7 +68,11 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
     // avoid terminating refracted rays that are about to be refracted back
     // out of a medium and thus have their beta value increased.
     Float etaScale = 1;
-
+    std::unique_ptr<GuidedSamplingInfo> guide_info = nullptr;
+    if (diffusion_nu > 1.) {
+        // nu is meanful only when bigger than 1
+        guide_info = std::make_unique<GuidedSamplingInfo>(diffusion_nu);
+    }
     for (bounces = 0;; ++bounces) {
         // Intersect _ray_ with scene and store intersection in _isect_
         SurfaceInteraction isect;
@@ -76,7 +80,11 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
         // Sample the participating medium, if present
         MediumInteraction mi;
-        if (ray.medium) beta *= ray.medium->Sample(ray, sampler, arena, &mi);
+        if (ray.medium) {
+            beta *= ray.medium->Sample(ray, sampler, arena, &mi, guide_info.get());
+        } else if (guide_info) {
+            guide_info->normal = Vector3f(isect.n);             // this is geometric normal
+        }
         if (beta.IsBlack()) break;
 
         // Handle an interaction with a medium or a surface
@@ -93,6 +101,14 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 
             Vector3f wo = -ray.d, wi;
             mi.phase->Sample_p(wo, &wi, sampler.Get2D());
+
+            if (guide_info == nullptr) {        
+                mi.phase->Sample_p(wo, &wi, sampler.Get2D());
+            } else {                        // use analytical path guiding
+                // Forward and reverse pdf is not long symmetric
+                Float pdfFwd = mi.phase->DvdSample_p(&wi, sampler.Get2D(), guide_info.get());
+                beta *= Inv4Pi / pdfFwd;
+            }
             ray = mi.SpawnRay(wi);
             specularBounce = false;
         } else {
@@ -191,7 +207,9 @@ Spectrum VolPathIntegrator::Li(const RayDifferential &r, const Scene &scene,
 VolPathIntegrator *CreateVolPathIntegrator(
     const ParamSet &params, std::shared_ptr<Sampler> sampler,
     std::shared_ptr<const Camera> camera) {
-    int maxDepth = params.FindOneInt("maxdepth", 5);
+    int maxDepth       = params.FindOneInt("maxdepth", 5);
+    bool log_time      = params.FindOneInt("logTime", 1) != 0;
+    Float diffusion_nu = params.FindOneFloat("diffusion_nu", 0.0);
     int np;
     const int *pb = params.FindInt("pixelbounds", &np);
     Bounds2i pixelBounds = camera->film->GetSampleBounds();
@@ -210,7 +228,7 @@ VolPathIntegrator *CreateVolPathIntegrator(
     std::string lightStrategy =
         params.FindOneString("lightsamplestrategy", "spatial");
     return new VolPathIntegrator(maxDepth, camera, sampler, pixelBounds,
-                                 rrThreshold, lightStrategy);
+                                 rrThreshold, lightStrategy, log_time, diffusion_nu);
 }
 
 }  // namespace pbrt
